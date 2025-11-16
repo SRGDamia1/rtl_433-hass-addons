@@ -1,9 +1,9 @@
 {
-  "name": "rtl_433_upd",
+  "name": "rtl_433",
   "version": "0.6.0-mstr-0.0.1-250905",
   "slug": "rtl433_upd",
-  "description": "Fork of rtl_433 add-on with exposed web interface on port 8433 and compiled with master branch",
-  "url": "https://github.com/emmjaibi/rtl_433-hass-addons-upd/tree/main/rtl_433",
+  "description": "Fork of rtl_433 add-on with exposed web interface on port 8433 and compiled from SRGDamia1's rtl_433 fork",
+  "url": "https://github.com/SRGDamia1/rtl_433-hass-addons/tree/main/rtl_433",
   "arch": ["armhf", "armv7", "aarch64", "amd64", "i386"],
   "startup": "application",
   "boot": "auto",
@@ -13,10 +13,12 @@
   "usb": true,
   "udev": true,
   "ports": {
-    "8433/tcp": 8433
+    "8433/tcp": 8433,
+    "8434/tcp": 8434
   },
   "ports_description": {
-    "8433/tcp": "rtl_433 web interface"
+    "8433/tcp": "rtl_433 web interface",
+    "8434/tcp": "rtl_433 web interface alternative port"
   },
   "options": {
     "rtl_433_conf_file": "",
