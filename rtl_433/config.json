@@ -10,6 +10,7 @@
   "init": false,
   "map": ["config:rw"],
   "services": ["mqtt:want"],
+  "homeassistant_api": true,
   "usb": true,
   "udev": true,
   "ports": {
