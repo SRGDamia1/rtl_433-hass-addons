@@ -123,7 +123,10 @@ do
     echo "Starting rtl_433 with $live..."
     tag=$(basename $live .conf)
     rtl_433 -c "$live" > >(sed -u "s/^/[$tag] /") 2> >(>&2 sed -u "s/^/[$tag] /")&
-    rtl_433_pids+=($!)
+    this_pid=$!
+    echo "Started rtl_433 with $live, PID: $this_pid"
+    rtl_433_pids+=($this_pid)
 done
 
+echo "All RTL_433 PIDs: ${rtl_433_pids[*]}"
 wait -n ${rtl_433_pids[*]}
