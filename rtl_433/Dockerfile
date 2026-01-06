@@ -15,7 +15,8 @@ RUN apk add --no-cache --virtual .buildDeps \
     soapy-sdr-dev \
     openssl-dev \
     cmake \
-    git
+    git \
+    mosquitto-clients
 
 WORKDIR /build
 
