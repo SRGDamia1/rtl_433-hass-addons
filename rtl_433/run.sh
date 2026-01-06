@@ -134,7 +134,7 @@ echo "All RTL_433 PIDs: ${rtl_433_pids[*]}"
 
 echo "Listening for stdin commands..."
 while read -r input; do
-    input="$(echo "$input" | jq --raw-output '.')"
     echo "RTL_433 received stdin: $input"
-    echo "$input" | bash
+    result=$(echo "$input" | bash)
+    echo "RTL_433 command result: $result"
 done
