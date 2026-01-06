@@ -104,11 +104,12 @@ for template in $conf_directory/*.conf.template
 do
     # Remove '.template' from the file name.
     live=$(basename $template .template)
+    echo "Creating full configuration from template $live..."
 
     # By sourcing the template, we can substitute any environment variable in
     # the template. In fact, enterprising users could write _any_ valid bash
     # to create the final configuration file. To simplify template creation,
-    # we wrap the needed redirections into a temparary file.
+    # we wrap the needed redirections into a temporary file.
     echo "cat <<EOD > $live" > /tmp/rtl_433_heredoc
     cat $template >> /tmp/rtl_433_heredoc
 
