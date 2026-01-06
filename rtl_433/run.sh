@@ -136,5 +136,5 @@ echo "Listening for stdin commands..."
 while read -r input; do
     input="$(echo "$input" | jq --raw-output '.')"
     echo "RTL_433 received stdin: $input"
-    do $input
+    echo "$input" | bash
 done
