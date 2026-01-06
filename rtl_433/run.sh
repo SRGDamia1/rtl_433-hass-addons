@@ -126,7 +126,7 @@ do
     rtl_433 -c "$live" > >(sed -u "s/^/[$tag] /") 2> >(>&2 sed -u "s/^/[$tag] /")&
     this_pid=$!
     echo "Started rtl_433 with $live, PID: $this_pid"
-    mosquitto_pub -h "$host" -p "$port" -t "rtl_433/$tag/process_id" -m "$this_pid" -u "$username" -P "$password" -q 1 -d -r
+    mosquitto_pub -h "$host" -p "$port" -t "rtl_433/process_id/$tag" -m "$this_pid" -u "$username" -P "$password" -q 1 -d -r
     rtl_433_pids+=($this_pid)
 done
 
@@ -137,8 +137,8 @@ echo "Listening for stdin commands..."
 while read -r input; do
     input="$(echo "$input" | jq --raw-output '.')"
     echo "RTL_433 received stdin: $input"
-    mosquitto_pub -h "$host" -p "$port" -t "rtl_433/stdin" -m "$input" -u "$username" -P "$password" -q 1 -d
+    mosquitto_pub -h "$host" -p "$port" -t "rtl_433/stdin/input" -m "$input" -u "$username" -P "$password" -q 1 -d
     result=$(echo "$input" | bash)
     echo "RTL_433 command result: $result"
-    mosquitto_pub -h "$host" -p "$port" -t "rtl_433/stdin_result" -m "$result" -u "$username" -P "$password" -q 1 -d
+    mosquitto_pub -h "$host" -p "$port" -t "rtl_433/stdin/result" -m "$result" -u "$username" -P "$password" -q 1 -d
 done
