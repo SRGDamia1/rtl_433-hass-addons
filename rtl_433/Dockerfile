@@ -15,8 +15,7 @@ RUN apk add --no-cache --virtual .buildDeps \
     soapy-sdr-dev \
     openssl-dev \
     cmake \
-    git \
-    mosquitto-clients
+    git
 
 WORKDIR /build
 
@@ -53,7 +52,8 @@ RUN apk add --no-cache libusb \
     hackrf \
     librtlsdr \
     soapy-sdr \
-    sed
+    sed \
+    mosquitto-clients
 WORKDIR /root
 COPY --from=rtl_433_builder /build/root/ /
 
