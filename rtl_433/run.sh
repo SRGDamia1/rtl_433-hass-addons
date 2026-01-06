@@ -126,7 +126,7 @@ do
     rtl_433 -c "$live" > >(sed -u "s/^/[$tag] /") 2> >(>&2 sed -u "s/^/[$tag] /")&
     this_pid=$!
     echo "Started rtl_433 with $live, PID: $this_pid"
-    mosquitto_pub -h "$MQTT_HOST" -p "$MQTT_PORT" -t "rtl_433/$live/process_id" -m "$this_pid" -u "$MQTT_USER" -P "$MQTT_PASS" -q 1
+    mosquitto_pub -h "$host" -p "$port" -t "rtl_433/$live/process_id" -m "$this_pid" -u "$username" -P "$password" -q 1 -d
     rtl_433_pids+=($this_pid)
 done
 
@@ -135,9 +135,9 @@ echo "All RTL_433 PIDs: ${rtl_433_pids[*]}"
 
 echo "Listening for stdin commands..."
 while read -r input; do
-    bashio::log.info "RTL_433 received stdin: $input"
-    mosquitto_pub -h "$MQTT_HOST" -p "$MQTT_PORT" -t "rtl_433/stdin" -m "$input" -u "$MQTT_USER" -P "$MQTT_PASS" -q 1
+    echo "RTL_433 received stdin: $input"
+    mosquitto_pub -h "$host" -p "$port" -t "rtl_433/stdin" -m "$input" -u "$username" -P "$password" -q 1 -d
     result=$(echo "$input" | bash)
-    bashio::log.info "RTL_433 command result: $result"
-    mosquitto_pub -h "$MQTT_HOST" -p "$MQTT_PORT" -t "rtl_433/stdin_result" -m "$result" -u "$MQTT_USER" -P "$MQTT_PASS" -q 1
+    echo "RTL_433 command result: $result"
+    mosquitto_pub -h "$host" -p "$port" -t "rtl_433/stdin_result" -m "$result" -u "$username" -P "$password" -q 1 -d
 done
