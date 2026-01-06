@@ -132,9 +132,9 @@ done
 echo "All RTL_433 PIDs: ${rtl_433_pids[*]}"
 # wait -n ${rtl_433_pids[*]}
 
-
+echo "Listening for stdin commands..."
 while read -r input; do
     input="$(echo "$input" | jq --raw-output '.')"
-    bashio::log.info "RTL_433 received stdin: $input"
+    echo "RTL_433 received stdin: $input"
     do $input
 done
