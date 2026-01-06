@@ -135,6 +135,7 @@ echo "All RTL_433 PIDs: ${rtl_433_pids[*]}"
 
 echo "Listening for stdin commands..."
 while read -r input; do
+    input="$(echo "$input" | jq --raw-output '.')"
     echo "RTL_433 received stdin: $input"
     mosquitto_pub -h "$host" -p "$port" -t "rtl_433/stdin" -m "$input" -u "$username" -P "$password" -q 1 -d
     echo "$input" | bash
