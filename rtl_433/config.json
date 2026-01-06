@@ -11,6 +11,7 @@
   "map": ["config:rw"],
   "services": ["mqtt:want"],
   "stdin": true,
+  "host_network": true,
   "usb": true,
   "udev": true,
   "ports": {
