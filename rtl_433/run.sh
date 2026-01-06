@@ -126,7 +126,7 @@ do
     rtl_433 -c "$live" > >(sed -u "s/^/[$tag] /") 2> >(>&2 sed -u "s/^/[$tag] /")&
     this_pid=$!
     echo "Started rtl_433 with $live, PID: $this_pid"
-    mosquitto_pub -h "$host" -p "$port" -t "rtl_433/$live/process_id" -m "$this_pid" -u "$username" -P "$password" -q 1 -d -r
+    mosquitto_pub -h "$host" -p "$port" -t "rtl_433/$tag/process_id" -m "$this_pid" -u "$username" -P "$password" -q 1 -d -r
     rtl_433_pids+=($this_pid)
 done
 
