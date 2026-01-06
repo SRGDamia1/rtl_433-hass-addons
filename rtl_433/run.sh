@@ -137,7 +137,8 @@ echo "Listening for stdin commands..."
 while read -r input; do
     echo "RTL_433 received stdin: $input"
     mosquitto_pub -h "$host" -p "$port" -t "rtl_433/stdin" -m "$input" -u "$username" -P "$password" -q 1 -d
-    result=$(echo "$input" | bash)
+    echo "$input" | bash
+    result=$(echo `!!`)
     echo "RTL_433 command result: $result"
     mosquitto_pub -h "$host" -p "$port" -t "rtl_433/stdin_result" -m "$result" -u "$username" -P "$password" -q 1 -d
 done
