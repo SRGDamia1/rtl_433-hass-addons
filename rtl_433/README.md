@@ -6,7 +6,7 @@ This fork is based on [pbkhrv's rtl_433 (next) add-on](https://github.com/pbkhrv
 
 Compared with that source add-on:
 
-* rtl_433 is pinned to the latest tagged release, `25.12`, instead of tracking the moving `master` branch. Manual builds can override `rtl433GitRevision` to select a different revision.
+* Like the source's next add-on, this fork builds rtl_433 from upstream `master`. Each build resolves the current branch commit through BuildKit's Git source support, so new upstream commits invalidate the source cache. Updating the running binary requires rebuilding or reinstalling the app.
 * The container uses Home Assistant's multi-architecture Alpine 3.24 base and supports `aarch64` and `amd64`. The Dockerfile supplies its base image and labels directly, following the [current BuildKit guidance](https://developers.home-assistant.io/blog/2026/04/02/builder-migration/).
 * Host networking allows rtl_433 HTTP outputs on ports 8433 and 8434, with an **Open Web UI** link for 8433. You must enable HTTP output in a radio template; opening or exposing a port alone does not start the web server.
 * Each radio's PID is published as a retained message to `rtl_433/process_id/<template-name>` when Supervisor supplies MQTT service settings. Sensor MQTT outputs remain controlled by your templates.

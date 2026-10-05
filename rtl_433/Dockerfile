@@ -1,3 +1,5 @@
+# syntax=docker/dockerfile:1
+
 ARG BUILD_FROM=ghcr.io/home-assistant/base:3.24
 FROM $BUILD_FROM AS builder
 
@@ -20,12 +22,10 @@ WORKDIR /build
 
 FROM builder AS rtl_433_builder
 
-RUN git clone https://github.com/merbanan/rtl_433
-WORKDIR ./rtl_433
-
-# Build a specific commit or tag.
-ARG rtl433GitRevision=25.12
-RUN git checkout "${rtl433GitRevision}"
+# Resolve master on every build so new commits invalidate the source cache.
+# Keep Git metadata for rtl_433's version and commit reporting.
+ADD --keep-git-dir=true https://github.com/merbanan/rtl_433.git#master /build/rtl_433
+WORKDIR /build/rtl_433
 WORKDIR ./build
 RUN cmake ..
 RUN make -j 4
