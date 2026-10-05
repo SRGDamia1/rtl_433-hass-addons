@@ -2,7 +2,7 @@
   "name": "rtl_433",
   "version": "0.6.0-mstr-0.0.1-250905",
   "slug": "rtl433_upd",
-  "description": "Fork of rtl_433 add-on with exposed web interface on port 8433 and compiled from SRGDamia1's rtl_433 fork",
+  "description": "Fork of rtl_433 add-on with exposed web interface on port 8433",
   "url": "https://github.com/SRGDamia1/rtl_433-hass-addons/tree/main/rtl_433",
   "arch": ["armhf", "armv7", "aarch64", "amd64", "i386"],
   "startup": "application",
