@@ -1,16 +1,40 @@
 #!/usr/bin/with-contenv bashio
 
 conf_directory="/config/rtl_433"
+runtime_directory="/tmp/rtl_433"
+umask 077
+mkdir -p "$runtime_directory" || exit 1
+chmod 700 "$runtime_directory" || exit 1
+rtl_433_pids=()
+stdin_pid=""
+
+cleanup() {
+    trap - EXIT TERM INT
+    if [[ -n "$stdin_pid" ]]; then
+        kill "$stdin_pid" 2>/dev/null || true
+    fi
+    if (( ${#rtl_433_pids[@]} )); then
+        kill "${rtl_433_pids[@]}" 2>/dev/null || true
+        wait "${rtl_433_pids[@]}" 2>/dev/null || true
+    fi
+}
+trap cleanup EXIT
+trap 'exit 0' TERM INT
+
+retain=0
+if bashio::config.true "retain"; then
+    retain=1
+fi
+host=""
+port=""
+username=""
+password=""
 
 if bashio::services.available "mqtt"; then
     host=$(bashio::services "mqtt" "host")
     password=$(bashio::services "mqtt" "password")
     port=$(bashio::services "mqtt" "port")
     username=$(bashio::services "mqtt" "username")
-    retain=$(bashio::config "retain")
-    if [ "$retain" = "true" ] ; then
-       retain=1
-    fi
 else
     bashio::log.info "The mqtt addon is not available."
     bashio::log.info "This is not a problem if you are using an external MQTT broker."
@@ -18,9 +42,21 @@ else
     bashio::log.info "For an external broker, manually update the output line in the configuration file with mqtt connection settings, and restart the addon."
 fi
 
-if [ ! -d $conf_directory ]
+publish_status() {
+    [[ -n "$host" && -n "$port" ]] || return 0
+    local args=(-h "$host" -p "$port" -q 1 -W 5 -t "$1" -m "$2")
+    if [[ -n "$username" ]]; then
+        args+=(-u "$username" -P "$password")
+    fi
+    if [[ "${3:-false}" == "true" ]]; then
+        args+=(-r)
+    fi
+    mosquitto_pub "${args[@]}" || bashio::log.warning "Could not publish status to $1"
+}
+
+if [ ! -d "$conf_directory" ]
 then
-    mkdir -p $conf_directory
+    mkdir -p "$conf_directory"
 fi
 
 # Check if the legacy configuration file is set and alert that it's deprecated.
@@ -32,26 +68,25 @@ then
     conf_file="/config/$conf_file"
 
     echo "Starting rtl_433 -c $conf_file"
-    rtl_433 -c "$conf_file"
-    exit $?
+    exec rtl_433 -c "$conf_file"
 fi
 
 # Create a reasonable default configuration in /config/rtl_433.
-if [ ! "$(ls -A $conf_directory)" ]
+if [ ! "$(ls -A "$conf_directory")" ]
 then
-    cat > $conf_directory/rtl_433.conf.template <<EOD
+    cat > "$conf_directory/rtl_433.conf.template" <<'EOD'
 # This is an empty template for configuring rtl_433. mqtt information will be
 # automatically added. Create multiple files ending in '.conf.template' to
 # manage multiple rtl_433 radios, being sure to set the 'device' setting. The
 # device must be set before mqtt output lines.
 # https://github.com/merbanan/rtl_433/blob/master/conf/rtl_433.example.conf
 
-output mqtt://\${host}:\${port},user=\${username},pass=\${password},retain=\${retain}
+output mqtt://${host}:${port},user=${username},pass=${password},retain=${retain}
 report_meta time:iso:usec:tz
 
 # To keep the same topics when switching between the normal and edge versions,
 # use this output line instead.
-# output mqtt://\${host}:\${port},user=\${username},pass=\${password},retain=\${retain},devices=rtl_433/9b13b3f4-rtl433/devices[/type][/model][/subtype][/channel][/id],events=rtl_433/9b13b3f4-rtl433/events,states=rtl_433/9b13b3f4-rtl433/states
+# output mqtt://${host}:${port},user=${username},pass=${password},retain=${retain},devices=rtl_433/9b13b3f4-rtl433/devices[/type][/model][/subtype][/channel][/id],events=rtl_433/9b13b3f4-rtl433/events,states=rtl_433/9b13b3f4-rtl433/states
 
 # Uncomment the following line to also enable the default "table" output to the
 # addon logs.
@@ -96,49 +131,78 @@ protocol -203
 EOD
 fi
 
-# Remove all rendered configuration files.
-rm -f $conf_directory/*.conf
-
-rtl_433_pids=()
-for template in $conf_directory/*.conf.template
+shopt -s nullglob
+templates=("$conf_directory"/*.conf.template)
+if (( ${#templates[@]} == 0 )); then
+    bashio::log.fatal "No .conf.template files found in $conf_directory"
+    exit 1
+fi
+for template in "${templates[@]}"
 do
     # Remove '.template' from the file name.
-    live=$(basename $template .template)
+    live="$runtime_directory/$(basename "$template" .template)"
     echo "Creating full configuration from template $live..."
 
     # By sourcing the template, we can substitute any environment variable in
     # the template. In fact, enterprising users could write _any_ valid bash
     # to create the final configuration file. To simplify template creation,
     # we wrap the needed redirections into a temporary file.
-    echo "cat <<EOD > $live" > /tmp/rtl_433_heredoc
-    cat $template >> /tmp/rtl_433_heredoc
+    printf 'cat <<EOD > %q\n' "$live" > "$runtime_directory/heredoc"
+    cat "$template" >> "$runtime_directory/heredoc"
 
     # Ensure a newline exists in case the template doesn't have one at the end
     # of its file.
-    echo >> /tmp/rtl_433_heredoc
+    echo >> "$runtime_directory/heredoc"
 
-    echo EOD >> /tmp/rtl_433_heredoc
+    echo EOD >> "$runtime_directory/heredoc"
 
-    source /tmp/rtl_433_heredoc
+    if ! source "$runtime_directory/heredoc"; then
+        bashio::log.fatal "Could not render $template"
+        exit 1
+    fi
 
     echo "Starting rtl_433 with $live..."
-    tag=$(basename $live .conf)
+    tag=$(basename "$live" .conf)
     rtl_433 -c "$live" > >(sed -u "s/^/[$tag] /") 2> >(>&2 sed -u "s/^/[$tag] /")&
     this_pid=$!
     echo "Started rtl_433 with $live, PID: $this_pid"
-    mosquitto_pub -h "$host" -p "$port" -t "rtl_433/process_id/$tag" -m "$this_pid" -u "$username" -P "$password" -q 1 -d -r
-    rtl_433_pids+=($this_pid)
+    rtl_433_pids+=("$this_pid")
+    publish_status "rtl_433/process_id/$tag" "$this_pid" true
 done
 
 echo "All RTL_433 PIDs: ${rtl_433_pids[*]}"
-# wait -n ${rtl_433_pids[*]}
 
-echo "Listening for stdin commands..."
-while read -r input; do
-    input="$(echo "$input" | jq --raw-output '.')"
-    echo "RTL_433 received stdin: $input"
-    mosquitto_pub -h "$host" -p "$port" -t "rtl_433/stdin/input" -m "$input" -u "$username" -P "$password" -q 1 -d
-    result=$(echo "$input" | bash)
-    echo "RTL_433 command result: $result"
-    mosquitto_pub -h "$host" -p "$port" -t "rtl_433/stdin/result" -m "$result" -u "$username" -P "$password" -q 1 -d
+stdin_commands() {
+    while IFS= read -r input; do
+        if ! input=$(printf '%s\n' "$input" | jq -er 'select(type == "string")'); then
+            bashio::log.warning "Ignoring stdin input: expected a JSON string"
+            continue
+        fi
+        publish_status "rtl_433/stdin/input" "$input"
+        result=$(printf '%s\n' "$input" | bash)
+        publish_status "rtl_433/stdin/result" "$result"
+    done
+}
+
+if bashio::config.true "allow_commands"; then
+    bashio::log.warning "Shell commands via Supervisor stdin are enabled"
+    exec 3<&0
+    stdin_commands <&3 &
+    stdin_pid=$!
+    exec 3<&-
+fi
+
+# Check every PID so exits during startup are caught too. Bash may already
+# have reaped an early exit before a later wait -n starts.
+while true; do
+    for pid in "${rtl_433_pids[@]}"; do
+        if ! kill -0 "$pid" 2>/dev/null; then
+            wait "$pid"
+            status=$?
+            bashio::log.error "An rtl_433 process exited (status $status); stopping all radios"
+            (( status == 0 )) && status=1
+            exit "$status"
+        fi
+    done
+    sleep 1
 done

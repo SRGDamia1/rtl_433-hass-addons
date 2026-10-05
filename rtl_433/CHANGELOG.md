@@ -1,3 +1,15 @@
+## [0.7.0 FORK] - 2026-10-05
+
+* Use Home Assistant's multi-architecture Alpine 3.24 base directly in the Dockerfile; remove obsolete build.json.
+* Update rtl_433 to the latest stable release, 25.12.
+* Support current Home Assistant architectures: aarch64 and amd64.
+* Replace legacy workflows with current BuildKit actions and signed, versioned multi-architecture releases.
+* Use an explicit homeassistant_config mount at /config to preserve existing templates.
+* Add the web UI link and document HTTP outputs with host networking.
+* Stop all radios if one exits, independently of stdin; preserve user .conf files and render private temporary configurations.
+* Correct MQTT retain values and skip status publishing without Supervisor MQTT service settings.
+* Require allow_commands: true for Supervisor stdin shell commands (disabled by default).
+
 ## [0.6.0] - 2025-03-22
 
 * Update Alpine base to 3.21

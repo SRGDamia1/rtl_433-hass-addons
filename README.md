@@ -1,24 +1,22 @@
-# rtl_433 Home Assistant add-ons
+# rtl_433 Home Assistant app
 
-This is a collection of Home Assistant add-ons that work with [rtl_433](https://github.com/merbanan/rtl_433).
+This fork contains one rtl_433 app (formerly called an add-on). It receives wireless sensor data and can publish it to MQTT. See the [app documentation](rtl_433/README.md), including its Fork Notes, for configuration and differences from the source repository.
 
-* [How to add this add-on repository to your Home Assistant install](https://home-assistant.io/hassio/installing_third_party_addons/)
-* Use `https://github.com/pbkhrv/rtl_433-hass-addons` as the URL for the repository.
+Add `https://github.com/SRGDamia1/rtl_433-hass-addons` to the Home Assistant app store's repositories. See [Home Assistant's repository instructions](https://www.home-assistant.io/common-tasks/os/#installing-third-party-apps). This app supports Home Assistant OS on `amd64` and `aarch64`.
 
-## Running the Development Version
+## Development
 
-- First, follow the tutorial at [Tutorial: Making your first add-on](https://developers.home-assistant.io/docs/add-ons/tutorial/) to learn how to build a basic addon.
-- Use `git` to clone this repository same `addons` folder used in the tutorial.
-- Make changes to the code, or use `git` to checkout branches to test.
-- Remember to to [reload](https://developers.home-assistant.io/docs/add-ons/tutorial/#i-dont-see-my-add-on) and reinstall the addon to rebuild the Docker containers to see any changes.
+Clone this repository into the local `/addons` directory, reload the app store, and install the local app. Rebuild after changing the Dockerfile or runtime script. See the [Home Assistant app tutorial](https://developers.home-assistant.io/docs/apps/tutorial/).
 
-## Release Process
+The Dockerfile uses `ghcr.io/home-assistant/base:3.24` directly. Current Supervisor builds use BuildKit and ignore legacy `build.json` files. To override the rtl_433 revision for a manual build, supply `--build-arg rtl433GitRevision=<tag-or-commit>`.
 
-* The [next](https://github.com/pbkhrv/rtl_433-hass-addons/tree/next) branch represents the upcoming version of these addons.
-* [rtl_433/config.json](rtl_433/config.json) and [rtl_433_mqtt_autodiscovery/config.json](rtl_433_mqtt_autodiscovery/config.json) will contain the version numbers of the previously set addon versions, but will have different code.
-* When `next` is ready to be tagged for a release:
-  1. Create a pull request against `main`, bumping the versions of each `config.json` file if the individual addon has been changed. As well, update the `CHANGELOG.md` in the same pull request.
-  2. When the pull request has been approved, create a date-based tag such as `2022.12.01.0` on the last commit of the pull request. This will build docker containers with the version numbers in `config.json`.
-  3. Merge the PR into `main` to actually promote the release to end users. Note the new version(s) in the commit message.
-    - Note we do not tag `main` in git, since each addon has it's own version number.
-  4. Create a new branch off of `main` setting the addon versions back to `next`. Create a PR to merge `main` into `next` to reconcile the branches.
+## Release process
+
+The build workflow checks pull requests and pushes to `main` on native `amd64` and `aarch64` runners. It checks runtime syntax, compiles the container, and checks the installed binary and libraries. These events do not publish images.
+
+1. Update `rtl_433/config.json` and `rtl_433/CHANGELOG.md` for a release.
+2. Publish a GitHub release with a tag exactly matching the app version (for example, `0.7.0`).
+3. The workflow builds and signs per-architecture images and publishes the signed manifest `ghcr.io/srgdamia1/rtl_433-upd:<version>` using `GITHUB_TOKEN`. No personal access token is needed.
+4. Verify that the manifest is public and contains both supported architectures before adding `"image": "ghcr.io/srgdamia1/rtl_433-upd"` to `config.json`. The app currently builds locally on installation. Switching an existing locally built installation to a prebuilt image can require uninstalling and reinstalling; save its options and templates first.
+
+For reproducible releases, pin `rtl433GitRevision` to a tag or commit. A moving branch can change between builds and Docker can reuse a cached clone; a rebuild alone does not guarantee a fresh upstream checkout. See [Home Assistant's publishing guidance](https://developers.home-assistant.io/docs/apps/publishing/).
