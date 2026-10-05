@@ -1,3 +1,8 @@
+## [0.7.1 FORK] - 2026-10-05
+
+* Fix the webui URL to use Supervisor's required [PORT:8433] placeholder. The literal port in 0.7.0 failed metadata validation and prevented the app from appearing in the store.
+* Add regression tests for the Supervisor webui URL validation rule.
+
 ## [0.7.0 FORK] - 2026-10-05
 
 * Use Home Assistant's multi-architecture Alpine 3.24 base directly in the Dockerfile; remove obsolete build.json.
