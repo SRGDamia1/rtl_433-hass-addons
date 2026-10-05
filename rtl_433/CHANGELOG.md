@@ -1,3 +1,7 @@
+## [0.7.3 FORK] - 2026-10-05
+
+* Fix installation when Supervisor's BuildKit environment has no Git executable. Resolve upstream master over HTTPS, then clone and check out that commit using Git inside the builder image, retaining version metadata and cache invalidation for new upstream commits.
+
 ## [0.7.2 FORK] - 2026-10-05
 
 * Always build rtl_433 from upstream master, using BuildKit's Git source support to detect new commits even with build caching enabled.

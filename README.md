@@ -8,7 +8,7 @@ Add `https://github.com/SRGDamia1/rtl_433-hass-addons` to the Home Assistant app
 
 Clone this repository into the local `/addons` directory, reload the app store, and install the local app. Rebuild after changing the Dockerfile or runtime script. See the [Home Assistant app tutorial](https://developers.home-assistant.io/docs/apps/tutorial/).
 
-The Dockerfile uses `ghcr.io/home-assistant/base:3.24` directly. Current Supervisor builds use BuildKit and ignore legacy `build.json` files. rtl_433 always builds from upstream `master`, resolved through a Git `ADD` instruction that retains version metadata and detects new commits on each build.
+The Dockerfile uses `ghcr.io/home-assistant/base:3.24` directly. Current Supervisor builds use BuildKit and ignore legacy `build.json` files. rtl_433 always builds from upstream `master`. An HTTPS `ADD` resolves its commit ID and detects new commits on each build; Git inside the builder image clones and checks out that commit, retaining version metadata without requiring Git in Supervisor's BuildKit environment.
 
 ## Release process
 

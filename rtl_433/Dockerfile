@@ -23,8 +23,13 @@ WORKDIR /build
 FROM builder AS rtl_433_builder
 
 # Resolve master on every build so new commits invalidate the source cache.
-# Keep Git metadata for rtl_433's version and commit reporting.
-ADD --keep-git-dir=true https://github.com/merbanan/rtl_433.git#master /build/rtl_433
+# HTTP ADD does not require Git in Supervisor's BuildKit environment.
+ADD https://api.github.com/repos/merbanan/rtl_433/git/ref/heads/master /build/rtl_433-master.json
+# Clone inside the builder image, which has Git, and retain version metadata.
+RUN commit=$(sed -n 's/.*"sha"[[:space:]]*:[[:space:]]*"\([0-9a-f]\{40\}\)".*/\1/p' /build/rtl_433-master.json) \
+    && test "${#commit}" -eq 40 \
+    && git clone --branch master https://github.com/merbanan/rtl_433.git /build/rtl_433 \
+    && git -C /build/rtl_433 checkout --detach "$commit"
 WORKDIR /build/rtl_433
 WORKDIR ./build
 RUN cmake ..
