@@ -1,4 +1,4 @@
-## [Unreleased]
+## [0.7.2 FORK] - 2026-10-05
 
 * Always build rtl_433 from upstream master, using BuildKit's Git source support to detect new commits even with build caching enabled.
 
